@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="Atomic Habits Coach - Interactive Habit Tracker & Action Blueprint System based on James Clear's Atomic Habits framework." />
+  
+  <!-- Mobile & PWA Meta Tags -->
+  <meta name="theme-color" content="#0b0f19" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Atomic Habits" />
+  
+  <!-- App Icons & Manifest -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+
+  <title>Atomic Habits Coach | Daily Action Blueprint & Identity Tracker</title>
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body>
+
+  <!-- Navigation Header -->
+  <header class="navbar">
+    <div class="container">
+      <a href="#" class="brand">
+        <span class="brand-icon">🧬</span>
+        <span class="brand-title">Atomic Habits Coach</span>
+        <span class="brand-tag">Action System</span>
+      </a>
+
+      <div class="nav-actions">
+        <button class="btn-secondary" onclick="resetDailyProgress()" title="Reset daily action items for a new day">
+          🔄 Reset Today
+        </button>
+        <button class="btn-primary" onclick="openAddHabitModal()">
+          <span>+</span> New Habit Blueprint
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- Dashboard Hero & Scorecard -->
+    <section class="dashboard-grid">
+      <div class="hero-banner">
+        <h1 class="hero-title">Cast Daily Votes for Your Identity 🗳️</h1>
+        <p class="hero-subtitle">
+          "Every action you take is a vote for the type of person you wish to become." Track each habit as an isolated action blueprint with chapter-by-chapter protocols.
+        </p>
+
+        <div class="identity-stats">
+          <div class="stat-card">
+            <div class="stat-icon" style="color: var(--purple-primary);">🗳️</div>
+            <div class="stat-info">
+              <div class="stat-value" id="total-votes-count">0</div>
+              <div class="stat-label">Total Identity Votes</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon" style="color: var(--emerald-primary);">🧬</div>
+            <div class="stat-info">
+              <div class="stat-value" id="active-habits-count">0</div>
+              <div class="stat-label">Active Blueprints</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon" style="color: var(--amber-primary);">🔥</div>
+            <div class="stat-info">
+              <div class="stat-value" id="total-streak-count">0 Days</div>
+              <div class="stat-label">Active Streak Volume</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 1% Daily Compounding Bar -->
+      <div class="compounding-card">
+        <div>
+          <div class="card-header-sm">
+            <span class="card-title-sm">⚡ 1% Compounding Progress</span>
+            <span class="streak-badge">Daily Protocol</span>
+          </div>
+
+          <p style="font-size: 0.85rem; color: var(--text-muted);">
+            Completing your habit action items today compounds your daily 1% improvement.
+          </p>
+
+          <div class="progress-bar-container">
+            <div class="progress-bar-label">
+              <span>Today's Adherence</span>
+              <span id="adherence-text">0 / 0 Action Items</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="adherence-progress-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="quote-box">
+          "You do not rise to the level of your goals. You fall to the level of your systems."
+        </div>
+      </div>
+    </section>
+
+    <!-- Active Habit Cards Section -->
+    <section>
+      <div class="section-header">
+        <h2 class="section-title">
+          <span>📋</span> Active Habit Action Blueprints
+        </h2>
+        <p style="font-size: 0.88rem; color: var(--text-muted);">
+          Each habit is isolated with dedicated chapter upgrades across all 4 Laws (Ch. 1 to Ch. 17).
+        </p>
+      </div>
+
+      <div class="habits-grid" id="habits-container">
+        <!-- Dynamically rendered via JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BLUEPRINT DETAILS MODAL -->
+  <div class="modal-overlay" id="blueprint-modal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="modal-title" id="blueprint-modal-title">Habit Blueprint Breakdown</h3>
+        <button class="modal-close" onclick="closeBlueprintModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="blueprint-modal-body">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD HABIT BLUEPRINT MODAL (WIZARD) -->
+  <div class="modal-overlay" id="add-habit-modal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="modal-title">➕ Create New Habit Blueprint</h3>
+        <button class="modal-close" onclick="closeAddHabitModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="add-habit-form" onsubmit="saveNewHabit(event)">
+          
+          <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 14px;">
+            <div class="form-group">
+              <label class="form-label" for="habit-title">Habit Title *</label>
+              <input type="text" id="habit-title" class="form-input" placeholder="e.g. Daily Deep Work & Coding" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="habit-icon">Emoji Icon</label>
+              <input type="text" id="habit-icon" class="form-input" placeholder="💻" maxlength="2" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="habit-category">Category</label>
+            <input type="text" id="habit-category" class="form-input" placeholder="e.g. Career, Mindset, Fitness" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="habit-identity">Chapter 2: Desired Identity Statement *</label>
+            <input type="text" id="habit-identity" class="form-input" placeholder='e.g. "I am a disciplined software developer who writes clean code daily."' required />
+          </div>
+
+          <!-- 4 Laws / Loop Quick Setup -->
+          <div style="background: var(--bg-surface-elevated); padding: 16px; border-radius: var(--radius-md); margin: 18px 0; border: 1px solid var(--border-glass);">
+            <h4 style="font-size: 0.9rem; font-family: 'Outfit'; margin-bottom: 12px; color: var(--blue-primary);">
+              🔄 The 4-Step Habit Loop Setup (Ch. 3)
+            </h4>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label class="form-label" for="habit-cue">1. Cue (Trigger)</label>
+                <input type="text" id="habit-cue" class="form-input" placeholder="e.g. Finishing morning tea" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="habit-craving">2. Craving (Motivation)</label>
+                <input type="text" id="habit-craving" class="form-input" placeholder="e.g. Desire to build focus & momentum" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="habit-response">3. Response (Action)</label>
+                <input type="text" id="habit-response" class="form-input" placeholder="e.g. Open IDE and write code for 30 mins" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="habit-reward">4. Reward (Benefit)</label>
+                <input type="text" id="habit-reward" class="form-input" placeholder="e.g. Pride in progress & tracking vote" />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="habit-stack">Chapter 5: Habit Stack Formula</label>
+            <input type="text" id="habit-stack" class="form-input" placeholder='e.g. "After I finish morning tea, I will open my laptop and write code."' />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="habit-env">Chapter 6: Environment Design Setup</label>
+            <input type="text" id="habit-env" class="form-input" placeholder='e.g. "Keep laptop open to code editor on desk every night."' />
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+            <button type="button" class="btn-secondary" onclick="closeAddHabitModal()">Cancel</button>
+            <button type="submit" class="btn-primary">Create Habit Blueprint</button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/habitsData.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/app.js"></script>
+
+  <!-- PWA Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => console.log('⚡ PWA Service Worker registered:', reg.scope))
+          .catch((err) => console.warn('Service Worker registration failed:', err));
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b0f19"/>
+      <stop offset="100%" stop-color="#131b2e"/>
+    </linearGradient>
+    <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="50%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.8"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background rounded squircle -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)" stroke="rgba(255, 255, 255, 0.1)" stroke-width="6"/>
+
+  <!-- Glowing background ring -->
+  <circle cx="256" cy="256" r="160" fill="none" stroke="url(#glowGrad)" stroke-width="6" opacity="0.3" filter="url(#glow)"/>
+
+  <!-- Orbital Electron / Habit Loops -->
+  <ellipse cx="256" cy="256" rx="170" ry="70" fill="none" stroke="url(#brandGrad)" stroke-width="12" stroke-linecap="round" transform="rotate(-30 256 256)"/>
+  <ellipse cx="256" cy="256" rx="170" ry="70" fill="none" stroke="url(#brandGrad)" stroke-width="12" stroke-linecap="round" transform="rotate(30 256 256)"/>
+  <ellipse cx="256" cy="256" rx="170" ry="70" fill="none" stroke="url(#brandGrad)" stroke-width="12" stroke-linecap="round" transform="rotate(90 256 256)"/>
+
+  <!-- Central Atomic Nucleus (Identity Vote Core) -->
+  <circle cx="256" cy="256" r="42" fill="url(#brandGrad)" filter="url(#glow)"/>
+  <circle cx="256" cy="256" r="24" fill="#ffffff" opacity="0.95"/>
+
+  <!-- Orbit Nodes / Votes -->
+  <circle cx="120" cy="180" r="14" fill="#10b981" filter="url(#glow)"/>
+  <circle cx="390" cy="180" r="14" fill="#3b82f6" filter="url(#glow)"/>
+  <circle cx="256" cy="425" r="14" fill="#8b5cf6" filter="url(#glow)"/>
+</svg>
