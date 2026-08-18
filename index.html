@@ -26,28 +26,112 @@
   <!-- Navigation Header -->
   <header class="navbar">
     <div class="container">
-      <a href="#" class="brand">
+      <a href="#" class="brand" onclick="switchTab('today'); return false;">
         <span class="brand-icon">🧬</span>
         <span class="brand-title">Atomic Habits Coach</span>
         <span class="brand-tag">Action System</span>
       </a>
 
+      <!-- Desktop View Nav Tabs & Actions -->
+      <div class="desktop-nav-tabs">
+        <button class="desktop-tab-btn active" data-tab="today" onclick="switchTab('today')">⚡ Today</button>
+        <button class="desktop-tab-btn" data-tab="habits" onclick="switchTab('habits')">📋 Blueprints</button>
+        <button class="desktop-tab-btn" data-tab="stats" onclick="switchTab('stats')">📊 Stats & Votes</button>
+        <button class="desktop-tab-btn" data-tab="system" onclick="switchTab('system')">⚙️ System</button>
+      </div>
+
       <div class="nav-actions">
-        <button class="btn-secondary" onclick="resetDailyProgress()" title="Reset daily action items for a new day">
+        <button class="btn-secondary desktop-only" onclick="resetDailyProgress()" title="Reset daily action items for a new day">
           🔄 Reset Today
         </button>
         <button class="btn-primary" onclick="openAddHabitModal()">
-          <span>+</span> New Habit Blueprint
+          <span>+</span> <span class="btn-text">New Habit</span>
         </button>
       </div>
     </div>
   </header>
 
-  <main class="container">
+  <main class="container main-content-wrapper">
 
-    <!-- Dashboard Hero & Scorecard -->
-    <section class="dashboard-grid">
-      <div class="hero-banner">
+    <!-- TAB 1: TODAY'S FOCUS CHECKLIST -->
+    <div id="tab-today" class="tab-content active">
+      <!-- 1% Daily Compounding Bar -->
+      <section class="compounding-card hero-compounding">
+        <div>
+          <div class="card-header-sm">
+            <span class="card-title-sm">⚡ 1% Compounding Progress</span>
+            <span class="streak-badge">Daily Protocol</span>
+          </div>
+
+          <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 12px;">
+            Completing your habit action items today compounds your daily 1% improvement.
+          </p>
+
+          <div class="progress-bar-container">
+            <div class="progress-bar-label">
+              <span>Today's Adherence</span>
+              <span id="adherence-text">0 / 0 Action Items</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="adherence-progress-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="quote-box">
+          "You do not rise to the level of your goals. You fall to the level of your systems."
+        </div>
+      </section>
+
+      <!-- Today's Action Checklist per Habit -->
+      <section class="today-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span>⚡</span> Today's Action Protocol
+          </h2>
+          <span class="view-toggle-badge" id="today-counter-badge">0 Actions Remaining</span>
+        </div>
+
+        <div id="today-checklist-container" class="today-checklist-grid">
+          <!-- Dynamically rendered via JS -->
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 2: HABIT BLUEPRINTS DIRECTORY -->
+    <div id="tab-habits" class="tab-content">
+      <section>
+        <div class="section-header-mobile">
+          <div>
+            <h2 class="section-title">
+              <span>📋</span> Habit Action Blueprints
+            </h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 2px;">
+              Isolated protocols with chapter upgrades across all 4 Laws (Ch. 1 to Ch. 17).
+            </p>
+          </div>
+
+          <!-- Controls: Category Filters & Compact View Switch -->
+          <div class="habits-controls-bar">
+            <div class="category-scroll-container" id="category-filter-chips">
+              <!-- Dynamically rendered category chips -->
+            </div>
+
+            <button class="compact-toggle-btn" id="compact-toggle-btn" onclick="toggleCompactMode()" title="Toggle Compact / Expanded View">
+              <span id="compact-toggle-icon">📐</span> <span id="compact-toggle-label">Compact View</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="habits-grid" id="habits-container">
+          <!-- Dynamically rendered via JS -->
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 3: STATS & IDENTITY SCORECARD -->
+    <div id="tab-stats" class="tab-content">
+      <section class="hero-banner">
         <h1 class="hero-title">Cast Daily Votes for Your Identity 🗳️</h1>
         <p class="hero-subtitle">
           "Every action you take is a vote for the type of person you wish to become." Track each habit as an isolated action blueprint with chapter-by-chapter protocols.
@@ -78,58 +162,103 @@
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- 1% Daily Compounding Bar -->
-      <div class="compounding-card">
-        <div>
-          <div class="card-header-sm">
-            <span class="card-title-sm">⚡ 1% Compounding Progress</span>
-            <span class="streak-badge">Daily Protocol</span>
-          </div>
-
-          <p style="font-size: 0.85rem; color: var(--text-muted);">
-            Completing your habit action items today compounds your daily 1% improvement.
-          </p>
-
-          <div class="progress-bar-container">
-            <div class="progress-bar-label">
-              <span>Today's Adherence</span>
-              <span id="adherence-text">0 / 0 Action Items</span>
-            </div>
-            <div class="progress-track">
-              <div class="progress-fill" id="adherence-progress-fill" style="width: 0%;"></div>
-            </div>
-          </div>
+      <!-- Identity Breakdown per Habit -->
+      <section style="margin-top: 24px;">
+        <h3 class="section-title" style="margin-bottom: 14px; font-size: 1.15rem;">
+          🎯 Identity Scorecard Breakdown
+        </h3>
+        <div id="identity-breakdown-container" class="identity-breakdown-grid">
+          <!-- Dynamically rendered via JS -->
         </div>
+      </section>
+    </div>
 
-        <div class="quote-box">
-          "You do not rise to the level of your goals. You fall to the level of your systems."
-        </div>
-      </div>
-    </section>
-
-    <!-- Active Habit Cards Section -->
-    <section>
-      <div class="section-header">
-        <h2 class="section-title">
-          <span>📋</span> Active Habit Action Blueprints
-        </h2>
-        <p style="font-size: 0.88rem; color: var(--text-muted);">
-          Each habit is isolated with dedicated chapter upgrades across all 4 Laws (Ch. 1 to Ch. 17).
+    <!-- TAB 4: SYSTEM & SETTINGS -->
+    <div id="tab-system" class="tab-content">
+      <section class="system-card">
+        <h2 class="section-title" style="margin-bottom: 12px;">⚙️ Atomic System Settings</h2>
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px;">
+          Manage your daily tracking protocols, reset progress for a fresh day, or backup/restore your blueprint data.
         </p>
-      </div>
 
-      <div class="habits-grid" id="habits-container">
-        <!-- Dynamically rendered via JS -->
-      </div>
-    </section>
+        <div class="system-action-list">
+          <div class="system-action-item">
+            <div>
+              <h4 style="font-size: 1rem; font-weight: 600;">🔄 Reset Daily Action Items</h4>
+              <p style="font-size: 0.82rem; color: var(--text-muted);">Reset all habit checkmarks for today. Total identity votes and streaks will remain intact.</p>
+            </div>
+            <button class="btn-secondary" onclick="resetDailyProgress()">Reset Today</button>
+          </div>
+
+          <div class="system-action-item">
+            <div>
+              <h4 style="font-size: 1rem; font-weight: 600;">💾 Export Blueprint Backup</h4>
+              <p style="font-size: 0.82rem; color: var(--text-muted);">Download a JSON copy of all habit blueprints and identity vote records.</p>
+            </div>
+            <button class="btn-secondary" onclick="exportDataJSON()">Export JSON</button>
+          </div>
+
+          <div class="system-action-item">
+            <div>
+              <h4 style="font-size: 1rem; font-weight: 600;">📥 Restore Data Backup</h4>
+              <p style="font-size: 0.82rem; color: var(--text-muted);">Load habit blueprints from a previously exported JSON backup file.</p>
+            </div>
+            <label class="btn-secondary" style="cursor: pointer;">
+              Import JSON
+              <input type="file" id="import-file-input" accept=".json" style="display: none;" onchange="importDataJSON(event)" />
+            </label>
+          </div>
+        </div>
+
+        <div class="framework-info-box">
+          <h4 style="color: var(--blue-primary); margin-bottom: 6px; font-family: 'Outfit';">📖 Atomic Habits 4 Laws Framework Summary</h4>
+          <ul style="font-size: 0.85rem; color: var(--text-muted); padding-left: 18px; line-height: 1.6;">
+            <li><strong>1st Law (Cue)</strong>: Make it Obvious (Ch. 4 Pointing & Calling, Ch. 5 Stacking, Ch. 6 Environment Design).</li>
+            <li><strong>2nd Law (Craving)</strong>: Make it Attractive (Ch. 8 Temptation Bundling, Ch. 9 Culture, Ch. 10 Mindset Reframe).</li>
+            <li><strong>3rd Law (Response)</strong>: Make it Easy (Ch. 11 Motion vs Action, Ch. 12 Least Effort, Ch. 13 2-Min Rule, Ch. 14 Automation).</li>
+            <li><strong>4th Law (Reward)</strong>: Make it Satisfying (Ch. 15 Immediate Reward, Ch. 16 Habit Tracker, Ch. 17 Contract).</li>
+          </ul>
+        </div>
+      </section>
+    </div>
 
   </main>
 
-  <!-- BLUEPRINT DETAILS MODAL -->
+  <!-- MOBILE BOTTOM NAVIGATION DOCK -->
+  <nav class="mobile-bottom-nav">
+    <button class="nav-tab-item active" data-tab="today" onclick="switchTab('today')">
+      <span class="tab-icon">⚡</span>
+      <span class="tab-label">Today</span>
+    </button>
+
+    <button class="nav-tab-item" data-tab="habits" onclick="switchTab('habits')">
+      <span class="tab-icon">📋</span>
+      <span class="tab-label">Habits</span>
+    </button>
+
+    <div class="fab-wrapper">
+      <button class="fab-button" onclick="openAddHabitModal()" title="Add Habit Blueprint">
+        <span>+</span>
+      </button>
+    </div>
+
+    <button class="nav-tab-item" data-tab="stats" onclick="switchTab('stats')">
+      <span class="tab-icon">📊</span>
+      <span class="tab-label">Stats</span>
+    </button>
+
+    <button class="nav-tab-item" data-tab="system" onclick="switchTab('system')">
+      <span class="tab-icon">⚙️</span>
+      <span class="tab-label">System</span>
+    </button>
+  </nav>
+
+  <!-- BLUEPRINT DETAILS MODAL (BOTTOM SHEET ON MOBILE) -->
   <div class="modal-overlay" id="blueprint-modal">
     <div class="modal-container">
+      <div class="drag-handle-bar"><div class="drag-pill"></div></div>
       <div class="modal-header">
         <h3 class="modal-title" id="blueprint-modal-title">Habit Blueprint Breakdown</h3>
         <button class="modal-close" onclick="closeBlueprintModal()">&times;</button>
@@ -140,9 +269,10 @@
     </div>
   </div>
 
-  <!-- ADD HABIT BLUEPRINT MODAL (WIZARD) -->
+  <!-- ADD HABIT BLUEPRINT MODAL (WIZARD / BOTTOM SHEET ON MOBILE) -->
   <div class="modal-overlay" id="add-habit-modal">
     <div class="modal-container">
+      <div class="drag-handle-bar"><div class="drag-pill"></div></div>
       <div class="modal-header">
         <h3 class="modal-title">➕ Create New Habit Blueprint</h3>
         <button class="modal-close" onclick="closeAddHabitModal()">&times;</button>
@@ -150,12 +280,12 @@
       <div class="modal-body">
         <form id="add-habit-form" onsubmit="saveNewHabit(event)">
           
-          <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 14px;">
-            <div class="form-group">
+          <div class="form-row-responsive">
+            <div class="form-group" style="flex: 3;">
               <label class="form-label" for="habit-title">Habit Title *</label>
               <input type="text" id="habit-title" class="form-input" placeholder="e.g. Daily Deep Work & Coding" required />
             </div>
-            <div class="form-group">
+            <div class="form-group" style="flex: 1;">
               <label class="form-label" for="habit-icon">Emoji Icon</label>
               <input type="text" id="habit-icon" class="form-input" placeholder="💻" maxlength="2" />
             </div>
@@ -172,12 +302,12 @@
           </div>
 
           <!-- 4 Laws / Loop Quick Setup -->
-          <div style="background: var(--bg-surface-elevated); padding: 16px; border-radius: var(--radius-md); margin: 18px 0; border: 1px solid var(--border-glass);">
+          <div class="habit-loop-setup-card">
             <h4 style="font-size: 0.9rem; font-family: 'Outfit'; margin-bottom: 12px; color: var(--blue-primary);">
               🔄 The 4-Step Habit Loop Setup (Ch. 3)
             </h4>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-grid-2col">
               <div class="form-group">
                 <label class="form-label" for="habit-cue">1. Cue (Trigger)</label>
                 <input type="text" id="habit-cue" class="form-input" placeholder="e.g. Finishing morning tea" />
@@ -207,7 +337,7 @@
             <input type="text" id="habit-env" class="form-input" placeholder='e.g. "Keep laptop open to code editor on desk every night."' />
           </div>
 
-          <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+          <div class="modal-form-footer">
             <button type="button" class="btn-secondary" onclick="closeAddHabitModal()">Cancel</button>
             <button type="submit" class="btn-primary">Create Habit Blueprint</button>
           </div>
@@ -216,6 +346,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
 
   <!-- Scripts -->
   <script src="js/habitsData.js"></script>

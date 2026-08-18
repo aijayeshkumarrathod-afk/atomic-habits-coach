@@ -10,9 +10,13 @@ function renderDashboardStats(habits) {
   const totalStreaks = habits.reduce((sum, h) => sum + h.streak, 0);
   const avgAdherence = totalActionItems > 0 ? Math.round((completedActionItems / totalActionItems) * 100) : 0;
 
-  document.getElementById('total-votes-count').textContent = totalVotes;
-  document.getElementById('active-habits-count').textContent = habits.length;
-  document.getElementById('total-streak-count').textContent = `${totalStreaks} Days`;
+  const votesEl = document.getElementById('total-votes-count');
+  const habitsEl = document.getElementById('active-habits-count');
+  const streakEl = document.getElementById('total-streak-count');
+  
+  if (votesEl) votesEl.textContent = totalVotes;
+  if (habitsEl) habitsEl.textContent = habits.length;
+  if (streakEl) streakEl.textContent = `${totalStreaks} Days`;
 
   // Update progress bar
   const progressFill = document.getElementById('adherence-progress-fill');
@@ -21,33 +25,106 @@ function renderDashboardStats(habits) {
     progressFill.style.width = `${avgAdherence}%`;
     progressText.textContent = `${completedActionItems} / ${totalActionItems} Action Items Completed Today (${avgAdherence}%)`;
   }
+
+  // Update remaining counter on Today tab
+  const remainingBadge = document.getElementById('today-counter-badge');
+  if (remainingBadge) {
+    const remainingCount = totalActionItems - completedActionItems;
+    remainingBadge.textContent = remainingCount === 0 && totalActionItems > 0 
+      ? '🎉 All Done Today!' 
+      : `${remainingCount} Actions Remaining`;
+  }
 }
 
-// Render Habit Cards Grid
-function renderHabitsGrid(habits) {
-  const container = document.getElementById('habits-container');
+// Render Today's Focused Checklist View (Tab 1)
+function renderTodayChecklist(habits) {
+  const container = document.getElementById('today-checklist-container');
   if (!container) return;
 
   if (habits.length === 0) {
     container.innerHTML = `
-      <div style="grid-column: 1/-1; text-align: center; padding: 48px; background: var(--bg-surface); border-radius: var(--radius-lg); border: 1px dashed var(--border-glass);">
-        <p style="font-size: 1.2rem; color: var(--text-muted); margin-bottom: 16px;">No habit blueprints active yet.</p>
-        <button class="btn-primary" onclick="openAddHabitModal()">+ Create First Habit Blueprint</button>
+      <div style="text-align: center; padding: 48px; background: var(--bg-surface); border-radius: var(--radius-lg); border: 1px dashed var(--border-glass);">
+        <p style="font-size: 1.1rem; color: var(--text-muted); margin-bottom: 16px;">No habit protocols active for today.</p>
+        <button class="btn-primary" onclick="openAddHabitModal()">+ Create First Blueprint</button>
       </div>
     `;
     return;
   }
 
-  container.innerHTML = habits.map(habit => renderHabitCard(habit)).join('');
+  container.innerHTML = habits.map(habit => {
+    const completedCount = habit.actionItems.filter(i => i.completed).length;
+    const totalCount = habit.actionItems.length;
+
+    return `
+      <div class="today-habit-group">
+        <div class="today-group-header">
+          <div class="today-group-title">
+            <span style="font-size: 1.5rem;">${habit.icon}</span>
+            <div>
+              <div style="color: white; font-weight: 700;">${escapeHtml(habit.title)}</div>
+              <div style="font-size: 0.78rem; color: var(--purple-primary); font-weight: 600;">"${escapeHtml(habit.identity.statement)}"</div>
+            </div>
+          </div>
+          <div class="action-counter" style="font-size: 0.8rem; background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 12px;">
+            ${completedCount} / ${totalCount} Done
+          </div>
+        </div>
+
+        <div class="action-items-list">
+          ${habit.actionItems.map(item => renderActionItem(habit.id, item)).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Render Category Filter Chips Bar
+function renderCategoryChips(habits, selectedCategory) {
+  const container = document.getElementById('category-filter-chips');
+  if (!container) return;
+
+  const categories = ['All', ...new Set(habits.map(h => h.category).filter(Boolean))];
+  
+  container.innerHTML = categories.map(cat => {
+    const isActive = (selectedCategory === cat) || (selectedCategory === 'all' && cat === 'All');
+    return `
+      <button class="category-chip ${isActive ? 'active' : ''}" onclick="filterByCategory('${escapeHtml(cat)}')">
+        ${escapeHtml(cat)}
+      </button>
+    `;
+  }).join('');
+}
+
+// Render Habit Cards Grid (Tab 2)
+function renderHabitsGrid(habits, selectedCategory = 'All', isCompactMode = false) {
+  const container = document.getElementById('habits-container');
+  if (!container) return;
+
+  let filtered = habits;
+  if (selectedCategory && selectedCategory.toLowerCase() !== 'all') {
+    filtered = habits.filter(h => h.category && h.category.toLowerCase() === selectedCategory.toLowerCase());
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="grid-column: 1/-1; text-align: center; padding: 48px; background: var(--bg-surface); border-radius: var(--radius-lg); border: 1px dashed var(--border-glass);">
+        <p style="font-size: 1.1rem; color: var(--text-muted); margin-bottom: 16px;">No habit blueprints found for category "${escapeHtml(selectedCategory)}".</p>
+        <button class="btn-primary" onclick="filterByCategory('All')">Show All Blueprints</button>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(habit => renderHabitCard(habit, isCompactMode)).join('');
 }
 
 // Render Individual Habit Card
-function renderHabitCard(habit) {
+function renderHabitCard(habit, isCompactMode = false) {
   const completedCount = habit.actionItems.filter(i => i.completed).length;
   const totalCount = habit.actionItems.length;
 
   return `
-    <div class="habit-card" id="card-${habit.id}">
+    <div class="habit-card ${isCompactMode ? 'compact' : ''}" id="card-${habit.id}">
       <div class="habit-card-header">
         <div class="habit-top-row">
           <div class="habit-title-area">
@@ -77,7 +154,14 @@ function renderHabitCard(habit) {
           <span class="action-counter">${completedCount} / ${totalCount} Done</span>
         </div>
 
-        <div class="action-items-list">
+        ${isCompactMode ? `
+          <div class="compact-summary" onclick="toggleCardExpand('${habit.id}')" style="cursor: pointer;">
+            <span>Tap to expand ${totalCount} chapter protocols...</span>
+            <span id="expand-arrow-${habit.id}">▼</span>
+          </div>
+        ` : ''}
+
+        <div class="action-items-list" id="action-list-${habit.id}">
           ${habit.actionItems.map(item => renderActionItem(habit.id, item)).join('')}
         </div>
       </div>
@@ -100,8 +184,8 @@ function renderActionItem(habitId, item) {
   const isIdentityVote = item.isIdentityVote;
 
   return `
-    <div class="action-item-row ${isCompleted ? 'completed' : ''}" onclick="toggleActionItem('${habitId}', '${item.id}')">
-      <div class="custom-checkbox">
+    <div class="action-item-row ${isCompleted ? 'completed' : ''}" onclick="toggleActionItem('${habitId}', '${item.id}', this)">
+      <div class="custom-checkbox ${isCompleted ? 'pop' : ''}">
         ${isCompleted ? '✓' : ''}
       </div>
       <div class="action-item-content">
@@ -110,6 +194,35 @@ function renderActionItem(habitId, item) {
       </div>
     </div>
   `;
+}
+
+// Render Identity Scorecard Breakdown (Tab 3)
+function renderIdentityBreakdown(habits) {
+  const container = document.getElementById('identity-breakdown-container');
+  if (!container) return;
+
+  if (habits.length === 0) {
+    container.innerHTML = `<p style="color: var(--text-muted);">No identity records available.</p>`;
+    return;
+  }
+
+  container.innerHTML = habits.map(h => `
+    <div class="identity-breakdown-card">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+          <span style="font-size: 1.5rem;">${h.icon}</span>
+          <strong style="font-family: 'Outfit'; font-size: 1.1rem; color: white;">${escapeHtml(h.title)}</strong>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--purple-primary); font-style: italic; margin-bottom: 12px;">
+          "${escapeHtml(h.identity.statement)}"
+        </p>
+      </div>
+      <div style="background: rgba(255,255,255,0.04); padding: 10px 14px; border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 0.8rem; color: var(--text-muted);">Total Identity Votes:</span>
+        <span style="font-family: 'Outfit'; font-size: 1.3rem; font-weight: 800; color: var(--emerald-primary);">🗳️ ${h.identity.totalVotesCast}</span>
+      </div>
+    </div>
+  `).join('');
 }
 
 // Render Full Blueprint Modal Content
@@ -203,6 +316,24 @@ function renderBlueprintDetails(habit) {
       `).join('')}
     </div>
   `;
+}
+
+// Toast notification helper
+function showToast(message) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = 'toast-message';
+  toast.innerHTML = `<span>⚡</span> <span>${escapeHtml(message)}</span>`;
+
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(-10px)';
+    toast.style.transition = 'all 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 2500);
 }
 
 // Utility HTML escaper to prevent XSS

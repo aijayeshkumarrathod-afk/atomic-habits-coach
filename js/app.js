@@ -4,29 +4,17 @@
 
 const STORAGE_KEY = 'atomic_habits_coach_app_state_v1';
 let appState = {
-  habits: []
+  habits: [],
+  currentTab: 'today',
+  selectedCategory: 'All',
+  isCompactMode: false
 };
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
   loadAppState();
   renderApp();
-
-  // Attach modal handlers
-  const addModal = document.getElementById('add-habit-modal');
-  const blueprintModal = document.getElementById('blueprint-modal');
-
-  if (addModal) {
-    addModal.addEventListener('click', (e) => {
-      if (e.target === addModal) closeAddHabitModal();
-    });
-  }
-
-  if (blueprintModal) {
-    blueprintModal.addEventListener('click', (e) => {
-      if (e.target === blueprintModal) closeBlueprintModal();
-    });
-  }
+  setupTouchAndGestures();
 });
 
 // Load state from localStorage or load default seed data
@@ -34,8 +22,12 @@ function loadAppState() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      appState = JSON.parse(saved);
-      // Migrate/Hydrate existing state to ensure Chapters 11-17 items exist
+      const parsed = JSON.parse(saved);
+      appState.habits = parsed.habits || [];
+      appState.currentTab = parsed.currentTab || 'today';
+      appState.selectedCategory = parsed.selectedCategory || 'All';
+      appState.isCompactMode = parsed.isCompactMode || false;
+      
       hydrateAppStateChapters();
     } else {
       appState.habits = JSON.parse(JSON.stringify(initialHabitsData));
@@ -52,7 +44,6 @@ function hydrateAppStateChapters() {
   if (!appState.habits || !Array.isArray(appState.habits)) return;
 
   appState.habits.forEach(habit => {
-    // If it's a seed habit (habit-1 or habit-2), sync missing action items from initialHabitsData
     const seedMatch = initialHabitsData.find(seed => seed.id === habit.id);
     if (seedMatch) {
       seedMatch.actionItems.forEach(seedItem => {
@@ -66,7 +57,6 @@ function hydrateAppStateChapters() {
       if (!habit.neverMissTwiceRule) habit.neverMissTwiceRule = seedMatch.neverMissTwiceRule;
       if (!habit.accountabilityContract) habit.accountabilityContract = seedMatch.accountabilityContract;
     } else {
-      // For custom habits, ensure Ch 11-17 action items exist
       const existingChapters = new Set(habit.actionItems.map(i => i.chapter));
 
       if (!existingChapters.has("Ch 11: Motion vs Action")) {
@@ -147,14 +137,92 @@ function saveAppState() {
   }
 }
 
-// Render entire UI
+// Render entire UI according to active tab
 function renderApp() {
+  // Always update global stats
   renderDashboardStats(appState.habits);
-  renderHabitsGrid(appState.habits);
+
+  // Update tab content visibilities
+  const tabs = ['today', 'habits', 'stats', 'system'];
+  tabs.forEach(t => {
+    const el = document.getElementById(`tab-${t}`);
+    if (el) {
+      if (t === appState.currentTab) {
+        el.classList.add('active');
+      } else {
+        el.classList.remove('active');
+      }
+    }
+  });
+
+  // Update navigation button active states
+  document.querySelectorAll('.nav-tab-item, .desktop-tab-btn').forEach(btn => {
+    if (btn.getAttribute('data-tab') === appState.currentTab) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  // Render specific view components
+  if (appState.currentTab === 'today') {
+    renderTodayChecklist(appState.habits);
+  } else if (appState.currentTab === 'habits') {
+    renderCategoryChips(appState.habits, appState.selectedCategory);
+    renderHabitsGrid(appState.habits, appState.selectedCategory, appState.isCompactMode);
+    
+    // Update compact toggle label
+    const compactLabel = document.getElementById('compact-toggle-label');
+    const compactIcon = document.getElementById('compact-toggle-icon');
+    if (compactLabel && compactIcon) {
+      compactLabel.textContent = appState.isCompactMode ? 'Full View' : 'Compact View';
+      compactIcon.textContent = appState.isCompactMode ? '📖' : '📐';
+    }
+  } else if (appState.currentTab === 'stats') {
+    renderIdentityBreakdown(appState.habits);
+  }
 }
 
-// Toggle Action Item Checkbox
-function toggleActionItem(habitId, itemId) {
+// Tab Switching Controller
+function switchTab(tabId) {
+  triggerHaptic('light');
+  appState.currentTab = tabId;
+  saveAppState();
+  renderApp();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Filter Habits by Category
+function filterByCategory(category) {
+  triggerHaptic('light');
+  appState.selectedCategory = category;
+  saveAppState();
+  renderApp();
+}
+
+// Toggle Compact Card Mode
+function toggleCompactMode() {
+  triggerHaptic('medium');
+  appState.isCompactMode = !appState.isCompactMode;
+  saveAppState();
+  renderApp();
+}
+
+// Expand individual habit card in compact mode
+function toggleCardExpand(habitId) {
+  triggerHaptic('light');
+  const actionList = document.getElementById(`action-list-${habitId}`);
+  const arrow = document.getElementById(`expand-arrow-${habitId}`);
+  if (actionList) {
+    actionList.classList.toggle('expanded');
+    if (arrow) {
+      arrow.textContent = actionList.classList.contains('expanded') ? '▲' : '▼';
+    }
+  }
+}
+
+// Toggle Action Item Checkbox with Haptic & Animation
+function toggleActionItem(habitId, itemId, element) {
   const habit = appState.habits.find(h => h.id === habitId);
   if (!habit) return;
 
@@ -163,10 +231,26 @@ function toggleActionItem(habitId, itemId) {
 
   item.completed = !item.completed;
 
+  // Trigger haptic & animation
+  if (item.completed) {
+    triggerHaptic('success');
+    if (element) {
+      const checkbox = element.querySelector('.custom-checkbox');
+      if (checkbox) {
+        checkbox.classList.remove('pop');
+        void checkbox.offsetWidth; // Trigger reflow
+        checkbox.classList.add('pop');
+      }
+    }
+  } else {
+    triggerHaptic('light');
+  }
+
   // Handle Identity Vote count
   if (item.isIdentityVote) {
     if (item.completed) {
       habit.identity.totalVotesCast += 1;
+      showToast(`Vote cast for: "${habit.identity.statement}" 🗳️`);
     } else {
       habit.identity.totalVotesCast = Math.max(0, habit.identity.totalVotesCast - 1);
     }
@@ -179,14 +263,80 @@ function toggleActionItem(habitId, itemId) {
   if (allCompleted && habit.lastCompletedDate !== todayStr) {
     habit.streak += 1;
     habit.lastCompletedDate = todayStr;
+    showToast(`🎉 ${habit.title} protocol completed today! Streak: ${habit.streak} days!`);
   }
 
   saveAppState();
   renderApp();
 }
 
-// Open Blueprint Modal
+// Tactile Web Haptics Helper
+function triggerHaptic(type = 'light') {
+  if (!('vibrate' in navigator)) return;
+  try {
+    if (type === 'light') navigator.vibrate(10);
+    else if (type === 'medium') navigator.vibrate(25);
+    else if (type === 'success') navigator.vibrate([15, 50, 20]);
+  } catch (e) {
+    // Ignore haptic errors on unsupported devices
+  }
+}
+
+// Touch Gestures & Mobile Modal Listeners
+function setupTouchAndGestures() {
+  const modals = [document.getElementById('add-habit-modal'), document.getElementById('blueprint-modal')];
+
+  modals.forEach(modal => {
+    if (!modal) return;
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.remove('active');
+      }
+    });
+
+    // Touch Swipe Down to Dismiss Bottom Sheet on Mobile
+    const container = modal.querySelector('.modal-container');
+    const dragBar = modal.querySelector('.drag-handle-bar');
+    if (!container) return;
+
+    let startY = 0;
+    let currentY = 0;
+
+    const handleTouchStart = (e) => {
+      startY = e.touches[0].clientY;
+    };
+
+    const handleTouchMove = (e) => {
+      currentY = e.touches[0].clientY;
+      const deltaY = currentY - startY;
+      if (deltaY > 0) {
+        container.style.transform = `translateY(${deltaY}px)`;
+      }
+    };
+
+    const handleTouchEnd = () => {
+      const deltaY = currentY - startY;
+      if (deltaY > 100) {
+        modal.classList.remove('active');
+        showToast('Sheet closed');
+      }
+      container.style.transform = '';
+      startY = 0;
+      currentY = 0;
+    };
+
+    if (dragBar) {
+      dragBar.addEventListener('touchstart', handleTouchStart, { passive: true });
+      dragBar.addEventListener('touchmove', handleTouchMove, { passive: true });
+      dragBar.addEventListener('touchend', handleTouchEnd);
+    }
+  });
+}
+
+// Open / Close Blueprint Modal
 function openBlueprintModal(habitId) {
+  triggerHaptic('medium');
   const habit = appState.habits.find(h => h.id === habitId);
   if (!habit) return;
 
@@ -196,17 +346,20 @@ function openBlueprintModal(habitId) {
 }
 
 function closeBlueprintModal() {
+  triggerHaptic('light');
   const modal = document.getElementById('blueprint-modal');
   if (modal) modal.classList.remove('active');
 }
 
 // Open / Close Add Habit Modal
 function openAddHabitModal() {
+  triggerHaptic('medium');
   const modal = document.getElementById('add-habit-modal');
   if (modal) modal.classList.add('active');
 }
 
 function closeAddHabitModal() {
+  triggerHaptic('light');
   const modal = document.getElementById('add-habit-modal');
   if (modal) modal.classList.remove('active');
   const form = document.getElementById('add-habit-form');
@@ -376,6 +529,7 @@ function saveNewHabit(event) {
 
   appState.habits.push(newHabit);
   saveAppState();
+  showToast(`Blueprint "${title}" created successfully! 🚀`);
   renderApp();
   closeAddHabitModal();
 }
@@ -385,10 +539,11 @@ function deleteHabit(habitId) {
   if (!confirm('Are you sure you want to delete this habit blueprint?')) return;
   appState.habits = appState.habits.filter(h => h.id !== habitId);
   saveAppState();
+  showToast('Habit blueprint deleted.');
   renderApp();
 }
 
-// Reset All Daily Progress (For Testing or New Day)
+// Reset All Daily Progress
 function resetDailyProgress() {
   if (!confirm('Reset all daily action items for today? (Total identity votes & streaks will be preserved)')) return;
   appState.habits.forEach(habit => {
@@ -397,5 +552,46 @@ function resetDailyProgress() {
     });
   });
   saveAppState();
+  showToast('Daily items reset for a fresh day! 🔄');
   renderApp();
+}
+
+// Export State to JSON File
+function exportDataJSON() {
+  try {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `atomic_habits_backup_${new Date().toISOString().split('T')[0]}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    showToast('Backup JSON downloaded! 💾');
+  } catch (err) {
+    alert('Failed to export data: ' + err.message);
+  }
+}
+
+// Import State from JSON File
+function importDataJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (imported && Array.isArray(imported.habits)) {
+        appState = imported;
+        saveAppState();
+        renderApp();
+        showToast('Backup restored successfully! 📥');
+      } else {
+        alert('Invalid JSON backup structure.');
+      }
+    } catch (err) {
+      alert('Error parsing JSON backup file: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
 }
